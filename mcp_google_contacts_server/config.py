@@ -45,7 +45,8 @@ class ContactsConfig(BaseModel):
     scopes: List[str] = Field(
         default=[
             'https://www.googleapis.com/auth/contacts',
-            'https://www.googleapis.com/auth/directory.readonly'
+            'https://www.googleapis.com/auth/directory.readonly',
+            'https://www.googleapis.com/auth/contacts.other.readonly'
         ],
         description="OAuth scopes required for the application"
     )

@@ -2,6 +2,29 @@
 
 This document details the modifications applied to the `rayanzaki/mcp-google-contacts-server` repository to enable successful installation and operation as a Python package.
 
+## Fork hardening — trevore (2026-06-20)
+
+Security hardening before exposing this server as a remote Claude connector
+(2026-06-20 audit). Earlier commits removed stdout credential/PII leaks and set
+`token.json` 0600 (`7b9fa40`). This change adds **caller authentication**:
+
+- **OAuth 2.1 resource server.** The HTTP MCP endpoint now requires a valid Auth0
+  JWT access token (signature via JWKS, `iss`, `aud`, `exp`) using fastmcp's
+  `RemoteAuthProvider` + `JWTVerifier` (`mcp_google_contacts_server/auth.py`).
+  Unauthenticated requests get 401 + `WWW-Authenticate`; the server serves RFC 9728
+  protected-resource metadata so Claude can discover the AS. HTTP transport
+  **refuses to start** without the OAuth env vars (fail closed). Single-user is
+  enforced upstream at Auth0; the resource server binds the audience.
+- **Migrated to `fastmcp` (v3)** — already declared in the manifest, but the code
+  imported the older bundled `mcp.server.fastmcp`. Pinned `fastmcp>=3.4,<4`, fixed
+  `requirements.txt` (was the inconsistent `mcp[cli]` + a duplicate `google-auth`),
+  and removed the stale `uv.lock` (it pinned `mcp 1.5.0`, no fastmcp) — regenerate
+  with `uv lock`.
+
+New env vars: `AUTH0_ISSUER`, `AUTH0_JWKS_URI`, `AUTH0_AUDIENCE`, `MCP_BASE_URL`.
+Tests: `pytest tests/test_auth.py`. Unchanged: the 9 tools, Google scopes
+(`contacts` + `directory.readonly`), and the server→Google data path.
+
 ## Version 0.1.1 (Proposed)
 
 ### Fixes:

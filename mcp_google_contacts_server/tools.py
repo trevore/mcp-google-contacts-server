@@ -1,7 +1,7 @@
 """MCP tools implementation for Google Contacts."""
 import asyncio
 from typing import Dict, List, Optional, Any, Union
-from mcp.server.fastmcp import FastMCP
+from fastmcp import FastMCP
 import traceback
 
 from mcp_google_contacts_server.google_contacts_service import GoogleContactsService, GoogleContactsError

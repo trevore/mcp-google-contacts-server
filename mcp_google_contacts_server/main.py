@@ -7,10 +7,11 @@ import os
 import argparse
 from typing import Dict, List, Optional
 from pathlib import Path
-from mcp.server.fastmcp import FastMCP
+from fastmcp import FastMCP
 
 from mcp_google_contacts_server.tools import register_tools, init_service
 from mcp_google_contacts_server.config import config, log
+from mcp_google_contacts_server.auth import build_auth
 
 def parse_args():
     """Parse command line arguments."""
@@ -77,9 +78,17 @@ def main():
         else:
             log(f"Warning: Specified credentials file {credentials_path} not found")
     
-    # Initialize FastMCP server
-    mcp = FastMCP("google-contacts")
-    
+    # OAuth 2.1 resource-server auth. Required for HTTP transport (internet-
+    # exposed); stdio is local-only and needs no caller auth.
+    auth = build_auth()
+    if args.transport == "http" and auth is None:
+        log("FATAL: HTTP transport requires OAuth. Set AUTH0_ISSUER, AUTH0_JWKS_URI, "
+            "AUTH0_AUDIENCE and MCP_BASE_URL. Refusing to start an unauthenticated server.")
+        sys.exit(1)
+
+    # Initialize FastMCP server (an OAuth resource server when auth is set)
+    mcp = FastMCP("google-contacts", auth=auth)
+
     # Register all tools
     register_tools(mcp)
     
@@ -95,10 +104,10 @@ def main():
     # Run the MCP server with the specified transport
     if args.transport == "stdio":
         log("Running with stdio transport")
-        mcp.run(transport='stdio')
+        mcp.run(transport="stdio")
     else:
         log(f"Running with HTTP transport on {args.host}:{args.port}")
-        mcp.run(transport='http', host=args.host, port=args.port)
+        mcp.run(transport="http", host=args.host, port=args.port)
 
 if __name__ == "__main__":
     main()

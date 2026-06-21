@@ -1,7 +1,20 @@
 import os
+import sys
 from pathlib import Path
 from typing import Optional, List, Dict
 from pydantic import BaseModel, Field
+
+
+def log(*args, **kwargs):
+    """Write diagnostics to stderr.
+
+    stdout is the JSON-RPC channel under the stdio MCP transport, so any
+    print() to stdout corrupts the protocol stream. Route human-facing
+    messages here instead.
+    """
+    kwargs["file"] = sys.stderr
+    print(*args, **kwargs)
+
 
 class ContactsConfig(BaseModel):
     """Configuration for Google Contacts integration."""
@@ -46,9 +59,13 @@ def load_config() -> ContactsConfig:
         Path(__file__).parent / "credentials.json"
     ]
     
-    # Create token directory if it doesn't exist
+    # Create token directory if it doesn't exist (restrict to current user)
     token_dir = Path.home() / ".config" / "google-contacts-mcp"
     token_dir.mkdir(parents=True, exist_ok=True)
+    try:
+        os.chmod(token_dir, 0o700)
+    except OSError:
+        pass
     
     return ContactsConfig(
         google_client_id=os.environ.get("GOOGLE_CLIENT_ID"),

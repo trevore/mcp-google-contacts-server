@@ -9,7 +9,7 @@ COPY mcp_google_contacts_server ./mcp_google_contacts_server
 RUN uv pip install --system -r requirements.txt && uv pip install --system .
 
 # Unprivileged user; HOME holds the mounted token.json at ~/.config/...
-RUN useradd -m app && mkdir -p /app/.config/google-contacts-mcp && chown -R app /app
+RUN useradd -m -u 1000 app && mkdir -p /app/.config/google-contacts-mcp && chown -R app /app
 ENV HOME=/app
 USER app
 EXPOSE 8000

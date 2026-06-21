@@ -6,7 +6,7 @@ import traceback
 
 from mcp_google_contacts_server.google_contacts_service import GoogleContactsService, GoogleContactsError
 from mcp_google_contacts_server.formatters import format_contact, format_contacts_list, format_directory_people
-from mcp_google_contacts_server.config import config
+from mcp_google_contacts_server.config import config, log
 
 # Global service instance
 contacts_service = None
@@ -26,7 +26,7 @@ def init_service() -> Optional[GoogleContactsService]:
         # First try environment variables
         try:
             contacts_service = GoogleContactsService.from_env()
-            print("Successfully loaded credentials from environment variables.")
+            log("Successfully loaded credentials from environment variables.")
             return contacts_service
         except GoogleContactsError:
             pass
@@ -35,19 +35,19 @@ def init_service() -> Optional[GoogleContactsService]:
         for path in config.credentials_paths:
             if path.exists():
                 try:
-                    print(f"Found credentials file at {path}")
+                    log(f"Found credentials file at {path}")
                     contacts_service = GoogleContactsService.from_file(path)
-                    print("Successfully loaded credentials from file.")
+                    log("Successfully loaded credentials from file.")
                     return contacts_service
                 except GoogleContactsError as e:
-                    print(f"Error with credentials at {path}: {e}")
+                    log(f"Error with credentials at {path}: {e}")
                     continue
                 
-        print("No valid credentials found. Please provide credentials to use Google Contacts.")
+        log("No valid credentials found. Please provide credentials to use Google Contacts.")
         return None
         
     except Exception as e:
-        print(f"Error initializing Google Contacts service: {str(e)}")
+        log(f"Error initializing Google Contacts service: {str(e)}")
         traceback.print_exc()
         return None
 

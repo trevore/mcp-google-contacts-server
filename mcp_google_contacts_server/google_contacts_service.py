@@ -9,7 +9,7 @@ from googleapiclient.discovery import build
 from google.auth.transport.requests import Request
 from googleapiclient.errors import HttpError
 
-from mcp_google_contacts_server.config import config
+from mcp_google_contacts_server.config import config, log
 
 class GoogleContactsError(Exception):
     """Exception raised for errors in the Google Contacts service."""
@@ -139,14 +139,19 @@ class GoogleContactsService:
                         self.credentials_info, config.scopes)
                     creds = flow.run_local_server(port=0)
                 
-                # Save the credentials for future use
+                # Save the credentials for future use (owner-only perms; this
+                # file holds a long-lived refresh token).
                 with open(token_path, 'w') as token:
                     token.write(creds.to_json())
+                try:
+                    os.chmod(token_path, 0o600)
+                except OSError:
+                    pass
                     
-                # Output refresh token for environment variable setup
+                # Never print the refresh token (long-lived credential); it is
+                # already persisted to token_path above.
                 if creds.refresh_token:
-                    print("\nNew refresh token obtained. Consider setting this in your environment:")
-                    print(f"GOOGLE_REFRESH_TOKEN={creds.refresh_token}\n")
+                    log("New credentials obtained and saved.")
             
             # Build and return the Google Contacts service
             return build('people', 'v1', credentials=creds)
@@ -400,7 +405,6 @@ class GoogleContactsService:
             
             # Execute the request
             response = request.execute()
-            print("response; ", response)
 
             
             # Process the results
@@ -419,7 +423,7 @@ class GoogleContactsService:
         except HttpError as error:
             # Handle gracefully if not a Google Workspace account
             if error.resp.status == 403:
-                print("Directory API access forbidden. This may not be a Google Workspace account.")
+                log("Directory API access forbidden. This may not be a Google Workspace account.")
                 return []
             raise Exception(f"Error listing directory people: {error}")
     
@@ -459,7 +463,7 @@ class GoogleContactsService:
             
         except HttpError as error:
             if error.resp.status == 403:
-                print("Directory search access forbidden. This may not be a Google Workspace account.")
+                log("Directory search access forbidden. This may not be a Google Workspace account.")
                 return []
             raise Exception(f"Error searching directory: {error}")
     

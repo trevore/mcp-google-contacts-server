@@ -10,7 +10,7 @@ from pathlib import Path
 from mcp.server.fastmcp import FastMCP
 
 from mcp_google_contacts_server.tools import register_tools, init_service
-from mcp_google_contacts_server.config import config
+from mcp_google_contacts_server.config import config, log
 
 def parse_args():
     """Parse command line arguments."""
@@ -55,7 +55,7 @@ def parse_args():
 
 def main():
     """Run the MCP server."""
-    print("Starting Google Contacts MCP Server...")
+    log("Starting Google Contacts MCP Server...")
     
     args = parse_args()
     
@@ -73,9 +73,9 @@ def main():
         if credentials_path.exists():
             # Add the specified credentials file to the beginning of the search paths
             config.credentials_paths.insert(0, credentials_path)
-            print(f"Using credentials file: {credentials_path}")
+            log(f"Using credentials file: {credentials_path}")
         else:
-            print(f"Warning: Specified credentials file {credentials_path} not found")
+            log(f"Warning: Specified credentials file {credentials_path} not found")
     
     # Initialize FastMCP server
     mcp = FastMCP("google-contacts")
@@ -87,17 +87,17 @@ def main():
     service = init_service()
     
     if not service:
-        print("Warning: No valid Google credentials found. Authentication will be required.")
-        print("You can provide credentials using environment variables or command line arguments:")
-        print("  GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, GOOGLE_REFRESH_TOKEN")
-        print("  --client-id, --client-secret, --refresh-token, --credentials-file")
+        log("Warning: No valid Google credentials found. Authentication will be required.")
+        log("You can provide credentials using environment variables or command line arguments:")
+        log("  GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, GOOGLE_REFRESH_TOKEN")
+        log("  --client-id, --client-secret, --refresh-token, --credentials-file")
     
     # Run the MCP server with the specified transport
     if args.transport == "stdio":
-        print("Running with stdio transport")
+        log("Running with stdio transport")
         mcp.run(transport='stdio')
     else:
-        print(f"Running with HTTP transport on {args.host}:{args.port}")
+        log(f"Running with HTTP transport on {args.host}:{args.port}")
         mcp.run(transport='http', host=args.host, port=args.port)
 
 if __name__ == "__main__":
